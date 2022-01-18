@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Configuration;
 using System.Data;
@@ -30,8 +24,7 @@ namespace TTJ
             sqlConnection.Open();
 
             //fill combobox
-            SqlCommand cmd = new SqlCommand(@"SELECT FName, DName FROM Faculty F 
-                                    INNER JOIN Direction D ON F.Fid=D.FID;", sqlConnection);
+            SqlCommand cmd = new SqlCommand("SELECT * FROM V_FacDir;", sqlConnection);
             SqlDataAdapter adapter = new SqlDataAdapter(cmd);
             DataSet ds = new DataSet();
             adapter.Fill(ds);
@@ -39,14 +32,34 @@ namespace TTJ
 
             comboBox1.DataSource = ds.Tables[0];
             comboBox2.DataSource = ds.Tables[0];
+            comboBox5.DataSource = ds.Tables[0];
+            comboBox6.DataSource = ds.Tables[0];
+            
             comboBox1.DisplayMember = "FName";
             comboBox2.DisplayMember = "DName";
-           
+            comboBox5.DisplayMember = "FName";
+            comboBox6.DisplayMember = "DName";
+
+            SqlCommand command = new SqlCommand("SELECT BID, Price FROM Building;", sqlConnection);
+            SqlDataAdapter adapter1 = new SqlDataAdapter(command);
+            DataSet ds1 = new DataSet();
+            adapter1.Fill(ds1);
+            command.ExecuteNonQuery();
+
+            textBox7.Text = ds1.Tables[0].Select()[0][1].ToString();
+
+            comboBox3.DataSource = ds1.Tables[0];
+            comboBox3.DisplayMember = "BID";
 
 
+            //update empty rooms
+            SqlCommand updateCmd = new SqlCommand("EXECUTE Update_Rooms;", sqlConnection);
+            int i = updateCmd.ExecuteNonQuery();
+            //MessageBox.Show(i.ToString());
+            
 
             // check connection
-            if(sqlConnection.State != ConnectionState.Open)
+            if (sqlConnection.State != ConnectionState.Open)
             {
                 MessageBox.Show("No Connection!");
             }
@@ -54,29 +67,22 @@ namespace TTJ
             {
                 MessageBox.Show("Connected to DB");
             }
-
         }
 
         private void Student_Click(object sender, EventArgs e)
         {
-            SqlDataAdapter adapter = new SqlDataAdapter(@"SELECT Name AS FIO, Gender AS Jinsi, [Address] AS Manzil, FName AS [Fakultet nomi], 
-DName AS [yo`nalishi] FROM Students S JOIN Direction D ON S.DID = D.DID JOIN Faculty F ON F.Fid = D.FID",
-sqlConnection);
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM V_ShowStudent_Info;", sqlConnection);
 
             DataSet ds = new DataSet();
 
             adapter.Fill(ds);
 
             dataGridView1.DataSource = ds.Tables[0];
-
         }
 
         private void rooms_Click(object sender, EventArgs e)
         {
-            SqlDataAdapter adapter = new SqlDataAdapter(@"SELECT RNum AS [Xona raqami], 
-Price AS Narxi, [Brom qilingan] = CASE WHEN IsBromed=1 THEN 'HA' ELSE 'Yoq' END, 
-BID AS[Bino raqami], [Address] AS[Manzil] 
-FROM Rooms R INNER JOIN Building B ON R.BNum = B.BID", sqlConnection);
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM V_Building_Rooms;", sqlConnection);
 
 
             DataSet ds = new DataSet();
@@ -88,14 +94,7 @@ FROM Rooms R INNER JOIN Building B ON R.BNum = B.BID", sqlConnection);
 
         private void payment_Click(object sender, EventArgs e)
         {
-            SqlDataAdapter adapter = new SqlDataAdapter(@"SELECT [Name] AS FIO, FName AS Fakultet, DName AS [Yo`nalish], P.RNum AS Xona, 
-StartDate AS [Brom qilingan kun], EndDate AS [Oxirgi muddat], [Oy miqdori]=DATEDIFF(MONTH, StartDate, EndDate),
-Payed AS [To`landi], Price AS Narxi, [To`langan summa]=(Price*Months), Qarzdorlik=(Price*Months)-Payed
-FROM Payment P INNER JOIN Students S ON P.[SID] = S.Id
-INNER JOIN Rooms R ON P.RNum = R.RNum
-INNER JOIN Building B ON B.BID = R.BNum
-INNER JOIN Direction D ON D.DID = S.DID
-INNER JOIN Faculty F ON F.Fid = D.FID", sqlConnection);
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM V_Payment_Info;", sqlConnection);
 
             DataSet ds = new DataSet();
 
@@ -104,18 +103,11 @@ INNER JOIN Faculty F ON F.Fid = D.FID", sqlConnection);
             dataGridView1.DataSource = ds.Tables[0];
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
-        }
-
         
 
         private void emptyRooms_Click(object sender, EventArgs e)
         {
-            SqlDataAdapter adapter = new SqlDataAdapter(@"SELECT RNum AS [Xona raqami], 
-Price AS Narxi, BID AS[Bino raqami], [Address] AS[Manzil] 
-FROM Rooms R INNER JOIN Building B ON R.BNum = B.BID WHERE IsBromed = 0", sqlConnection);
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM V_Empty_Rooms;", sqlConnection);
 
             DataSet ds = new DataSet();
 
@@ -127,15 +119,7 @@ FROM Rooms R INNER JOIN Building B ON R.BNum = B.BID WHERE IsBromed = 0", sqlCon
         // qarzdor talabalar
         private void label1_Click(object sender, EventArgs e)
         {
-            SqlDataAdapter adapter = new SqlDataAdapter(@"SELECT [Name] AS FIO, FName AS Fakultet, DName AS [Yo`nalish], P.RNum AS Xona, 
-StartDate AS [Brom qilingan kun], EndDate AS [Oxirgi muddat], [Oy miqdori]=DATEDIFF(MONTH, StartDate, EndDate),
-Payed AS [To`landi], Price AS Narxi, [To`langan summa]=(Price*Months), Qarzdorlik=(Price*Months)-Payed
-FROM Payment P INNER JOIN Students S ON P.[SID] = S.Id
-INNER JOIN Rooms R ON P.RNum = R.RNum
-INNER JOIN Building B ON B.BID = R.BNum
-INNER JOIN Direction D ON D.DID = S.DID
-INNER JOIN Faculty F ON F.Fid = D.FID 
-WHERE (Price*Months)-Payed>0", sqlConnection);
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM V_Dept_Info;", sqlConnection);
 
             DataSet ds = new DataSet();
 
@@ -146,17 +130,94 @@ WHERE (Price*Months)-Payed>0", sqlConnection);
 
         private void searchBut_Click(object sender, EventArgs e)
         {
-            SqlDataAdapter adapter = new SqlDataAdapter($@"SELECT Name AS FIO, Gender AS Jinsi, [Address] AS Manzil, FName AS [Fakultet nomi], 
-DName AS [yo`nalishi] FROM Students S JOIN Direction D ON S.DID = D.DID JOIN Faculty F ON F.Fid = D.FID
-WHERE ([Name] LIKE '%{textBox1.Text}%' OR '{textBox1.Text}'='')
-AND (DName='{comboBox2.Text}' OR FName='{comboBox1.Text}')", sqlConnection);
+            SqlCommand cmd = new SqlCommand("SP_Search", sqlConnection);
 
-            DataSet ds = new DataSet();
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Name", textBox1.Text);
+            cmd.Parameters.AddWithValue("@DName", comboBox2.Text);
+            cmd.Parameters.AddWithValue("@FName", comboBox1.Text);
+            cmd.ExecuteNonQuery();
+
+            DataTable dt = new DataTable();
+
+            try
+            {
+                SqlDataReader sqlDataReader = cmd.ExecuteReader();
+                dt.Load(sqlDataReader);
+            }catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+            dataGridView1.DataSource = dt;
+        }
+
+        private void archive_Click(object sender, EventArgs e)
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM V_Archive", sqlConnection);
+
+            DataSet ds =new DataSet();
             adapter.Fill(ds);
-            dataGridView1.DataSource = ds.Tables[0];
+            dataGridView1.DataSource=ds.Tables[0];
+        }
 
-            //MessageBox.Show($"hello, {textBox1.Text}");
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {            
+            if(textBox2.Text!="")
+                 textBox4.Text = (float.Parse(textBox7.Text) * int.Parse(textBox2.Text)).ToString();
+        }
+        
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            textBox5.Text = textBox3.Text;
+
+            if(textBox5.Text!="" && textBox4.Text!="")
+                textBox6.Text = (double.Parse(textBox4.Text)-double.Parse(textBox5.Text)).ToString();
+        }
+
+        private void SaveBtn_Click(object sender, EventArgs e)
+        {
+            
+            try
+            {
+                SqlCommand cmd = new SqlCommand(@"SP_InsertData", sqlConnection);
+                
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@name", StudentName.Text);
+                cmd.Parameters.AddWithValue("@gender", comboBox4.Text);
+                cmd.Parameters.AddWithValue("@address", textBox4.Text);
+                cmd.Parameters.AddWithValue("@DName", comboBox6.Text);
+                cmd.Parameters.AddWithValue("@RNum", comboBox7.Text);
+                cmd.Parameters.AddWithValue("@startDate", StartTime.Text);
+                cmd.Parameters.AddWithValue("@endDate", EndTime.Text);
+                cmd.Parameters.AddWithValue("@months", textBox2.Text);
+                cmd.Parameters.AddWithValue("@payed", textBox3.Text);
+
+                int i = cmd.ExecuteNonQuery();
+                MessageBox.Show("Ma'lumot muvofaqqiyatli saqlandi!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Kiritayotgan ma'lumotlar to'g'riligiga ishonch hosil qiling!");
+            }
+        }
+
+        // When building has chosed
+        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SqlCommand cmd1 = new SqlCommand($"SELECT * FROM Rooms WHERE BNum = '{comboBox3.Text}' AND isBromed=0;", sqlConnection);
+            SqlDataAdapter adapter2 = new SqlDataAdapter(cmd1);
+            DataSet ds2 = new DataSet();
+            adapter2.Fill(ds2);
+            cmd1.ExecuteNonQuery();
+
+            comboBox7.DataSource = ds2.Tables[0];
+            comboBox7.DisplayMember = "RNum";
         }
     }
 }
