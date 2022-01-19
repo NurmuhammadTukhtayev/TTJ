@@ -145,4 +145,42 @@ INNER JOIN Direction D ON D.DID = S.DID
 INNER JOIN Faculty F ON F.Fid = D.FID
 WHERE P.EndDate<GETDATE()
 
-select * from V_Archive
+select * from V_Archive;
+
+-- Procedure for select students by direction
+CREATE PROC V_Select_Students
+@DName VARCHAR(50)
+AS
+DECLARE @DID INT = (SELECT DID FROM Direction
+WHERE DName = @DName)
+SELECT [NAME], Months, Payed, BNum, R.RNum, Price, DEPT = (Months*Price-Payed) FROM Students S
+JOIN Payment P ON P.SID = S.Id
+JOIN Rooms R ON R.RNum = P.RNum
+JOIN Building B ON B.BID = R.BNum
+WHERE DID = @DID AND (Months*Price-Payed)>0;
+
+EXECUTE V_Select_Students 'Amaliy matematika'
+
+
+-- SP get student's info
+CREATE PROC SP_Get_Student
+@Name VARCHAR(50)
+AS
+SELECT [NAME], Months, Payed, BNum, R.RNum, Price, DEPT = (Months*Price-Payed) FROM Students S
+JOIN Payment P ON P.SID = S.Id
+JOIN Rooms R ON R.RNum = P.RNum
+JOIN Building B ON B.BID = R.BNum
+WHERE [Name] = @Name
+
+EXECUTE SP_Get_Student 'Avezova Madina'
+
+select * from Payment
+
+-- payment procedure
+CREATE PROC SP_Pay
+@N VARCHAR(50),
+@P MONEY
+AS
+DECLARE @SID INT = (SELECT Id FROM Students WHERE [Name] = @N)
+UPDATE Payment SET Payed = Payed+@P
+WHERE [SID] = @SID

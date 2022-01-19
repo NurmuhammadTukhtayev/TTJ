@@ -34,11 +34,15 @@ namespace TTJ
             comboBox2.DataSource = ds.Tables[0];
             comboBox5.DataSource = ds.Tables[0];
             comboBox6.DataSource = ds.Tables[0];
+            comboBox10.DataSource = ds.Tables[0];
+            comboBox9.DataSource = ds.Tables[0];
             
             comboBox1.DisplayMember = "FName";
             comboBox2.DisplayMember = "DName";
             comboBox5.DisplayMember = "FName";
             comboBox6.DisplayMember = "DName";
+            comboBox10.DisplayMember = "FName";
+            comboBox9.DisplayMember = "DName";
 
             SqlCommand command = new SqlCommand("SELECT BID, Price FROM Building;", sqlConnection);
             SqlDataAdapter adapter1 = new SqlDataAdapter(command);
@@ -218,6 +222,87 @@ namespace TTJ
 
             comboBox7.DataSource = ds2.Tables[0];
             comboBox7.DisplayMember = "RNum";
+        }
+
+        private void comboBox9_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                var adapter = new SqlDataAdapter($"EXEC V_Select_Students '{comboBox9.Text}'", sqlConnection);
+                var ds = new DataSet();
+                adapter.Fill(ds);
+
+                comboBox8.DataSource = ds.Tables[0];
+                comboBox8.DisplayMember = "Name";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void comboBox8_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var adapter = new SqlDataAdapter($"EXEC V_Select_Students '{comboBox9.Text}'", sqlConnection);
+            var ds = new DataSet();
+            adapter.Fill(ds);
+
+            foreach (DataRow row in ds.Tables[0].Rows)
+            {
+                var name = row["Name"];
+                var bNum = row["BNum"];
+                var rNum = row["RNum"];
+                var payed = row["Payed"];
+                var dept = row["Dept"];               
+
+                if ((string)name == comboBox8.GetItemText(comboBox8.SelectedItem))
+                {
+                    textBox8.Text = bNum.ToString();
+                    textBox9.Text = rNum.ToString();
+                    textBox11.Text = payed.ToString();
+                    textBox10.Text = dept.ToString();
+                    break;
+                }
+            }
+        }
+
+        private void textBox12_TextChanged(object sender, EventArgs e)
+        {
+            var adapter = new SqlDataAdapter($"EXECUTE SP_Get_Student '{comboBox8.GetItemText(comboBox8.SelectedItem)}'", sqlConnection);
+            var ds = new DataSet();
+            adapter.Fill(ds);
+
+            foreach (DataRow row in ds.Tables[0].Rows)
+            {
+                double payed = double.Parse(row["Payed"].ToString());
+                double months = double.Parse(row["Months"].ToString());
+                double price = double.Parse(row["Price"].ToString());
+                double debt = double.Parse(row["Dept"].ToString());
+
+                textBox13.Text = (months*price-(double.Parse(textBox12.Text) + payed)).ToString();
+
+            }
+        }
+
+        private void PaySaveBtn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var cmd = new SqlCommand("SP_Pay", sqlConnection);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@N", comboBox8.Text);
+                cmd.Parameters.AddWithValue("@P", textBox12.Text);
+
+                cmd.ExecuteNonQuery();
+
+                MessageBox.Show("To'lov muvofaqqiyatli amalga oshirildi!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            
         }
     }
 }
